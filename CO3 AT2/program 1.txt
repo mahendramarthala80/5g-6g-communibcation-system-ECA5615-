@@ -1,0 +1,170 @@
+clc;
+clear;
+close all;
+
+%% Wireless Service Framework with VNFs
+
+numUsers = 15;
+
+% Service types
+% 1 = Voice
+% 2 = Video
+% 3 = IoT
+% 4 = Internet
+
+serviceNames = {'Voice','Video','IoT','Internet'};
+
+rng(10);
+
+% Random service requested by each user
+serviceType = randi([1 4], 1, numUsers);
+
+%% VNF Requirements
+%                 CPU   Memory   Bandwidth
+VNF = [
+    10     5       10;     % Voice
+    25    15       30;     % Video
+     8     5        5;     % IoT
+    15    10       15      % Internet
+];
+
+%% Cloud Capacity
+cloudCPU = 200;
+cloudMemory = 100;
+cloudBandwidth = 200;
+
+%% Allocate Resources
+allocatedCPU = zeros(1, numUsers);
+allocatedMemory = zeros(1, numUsers);
+allocatedBandwidth = zeros(1, numUsers);
+
+accepted = zeros(1, numUsers);
+
+remainingCPU = cloudCPU;
+remainingMemory = cloudMemory;
+remainingBandwidth = cloudBandwidth;
+
+%% Service Allocation
+for i = 1:numUsers
+
+    s = serviceType(i);
+
+    reqCPU = VNF(s,1);
+    reqMemory = VNF(s,2);
+    reqBandwidth = VNF(s,3);
+
+    if (remainingCPU >= reqCPU) && ...
+       (remainingMemory >= reqMemory) && ...
+       (remainingBandwidth >= reqBandwidth)
+
+        allocatedCPU(i) = reqCPU;
+        allocatedMemory(i) = reqMemory;
+        allocatedBandwidth(i) = reqBandwidth;
+
+        remainingCPU = remainingCPU - reqCPU;
+        remainingMemory = remainingMemory - reqMemory;
+        remainingBandwidth = remainingBandwidth - reqBandwidth;
+
+        accepted(i) = 1;
+    end
+end
+
+%% Calculate Performance
+totalCPU = sum(allocatedCPU);
+totalMemory = sum(allocatedMemory);
+totalBandwidth = sum(allocatedBandwidth);
+
+cpuUtilization = totalCPU / cloudCPU * 100;
+memoryUtilization = totalMemory / cloudMemory * 100;
+bandwidthUtilization = totalBandwidth / cloudBandwidth * 100;
+
+acceptedUsers = sum(accepted);
+rejectedUsers = numUsers - acceptedUsers;
+
+%% Display Results
+fprintf('============================================\n');
+fprintf(' WIRELESS SERVICE FRAMEWORK USING VNFs\n');
+fprintf('============================================\n');
+
+fprintf('Number of Users       : %d\n', numUsers);
+fprintf('Accepted Services    : %d\n', acceptedUsers);
+fprintf('Rejected Services    : %d\n', rejectedUsers);
+
+fprintf('\nUser Service Allocation:\n');
+
+for i = 1:numUsers
+
+    fprintf('User %2d : %-10s : ', ...
+        i, serviceNames{serviceType(i)});
+
+    if accepted(i)
+        fprintf('ACCEPTED\n');
+    else
+        fprintf('REJECTED\n');
+    end
+end
+
+%% Resource Utilization
+fprintf('\nCloud Resource Utilization:\n');
+fprintf('CPU       : %.2f %%\n', cpuUtilization);
+fprintf('Memory    : %.2f %%\n', memoryUtilization);
+fprintf('Bandwidth : %.2f %%\n', bandwidthUtilization);
+
+fprintf('\nRemaining Resources:\n');
+fprintf('CPU       : %.2f units\n', remainingCPU);
+fprintf('Memory    : %.2f units\n', remainingMemory);
+fprintf('Bandwidth : %.2f units\n', remainingBandwidth);
+
+%% Plot 1 - Service Requests
+serviceCount = zeros(1,4);
+
+for i = 1:4
+    serviceCount(i) = sum(serviceType == i);
+end
+
+figure;
+bar(serviceCount);
+xlabel('Wireless Service');
+ylabel('Number of Users');
+title('Wireless Service Requests');
+xticklabels(serviceNames);
+grid on;
+
+%% Plot 2 - Cloud Resource Utilization
+figure;
+
+utilization = [
+    cpuUtilization
+    memoryUtilization
+    bandwidthUtilization
+];
+
+bar(utilization);
+xlabel('Cloud Resource');
+ylabel('Utilization (%)');
+title('VNF Cloud Resource Utilization');
+xticklabels({'CPU','Memory','Bandwidth'});
+ylim([0 120]);
+grid on;
+
+%% Plot 3 - Accepted and Rejected Services
+figure;
+
+bar([acceptedUsers rejectedUsers]);
+
+xlabel('Service Status');
+ylabel('Number of Users');
+title('Service Acceptance Performance');
+xticklabels({'Accepted','Rejected'});
+grid on;
+
+%% Plot 4 - User Service Allocation
+figure;
+
+stairs(1:numUsers, serviceType, 'LineWidth', 2);
+xlabel('User Number');
+ylabel('Service Type');
+title('Service Requested by Each User');
+yticks(1:4);
+yticklabels(serviceNames);
+grid on;

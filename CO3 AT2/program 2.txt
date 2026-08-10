@@ -1,0 +1,98 @@
+clc;
+clear;
+close all;
+
+%% Network Parameters
+numUsers = 20;
+numBS = 4;
+
+% Available cloud resources
+totalCPU = 100;
+totalMemory = 100;
+totalBandwidth = 100;
+
+% Random user traffic demand
+rng(1);
+trafficDemand = randi([5 20], 1, numUsers);
+
+% Resource requirement per user
+cpuDemand = trafficDemand * 0.8;
+memoryDemand = trafficDemand * 0.5;
+
+%% Allocate users to base stations
+userBS = randi([1 numBS], 1, numUsers);
+
+%% Calculate traffic at each BS
+bsTraffic = zeros(1, numBS);
+
+for i = 1:numUsers
+    bsTraffic(userBS(i)) = bsTraffic(userBS(i)) + trafficDemand(i);
+end
+
+%% Cloud Resource Allocation
+totalTraffic = sum(trafficDemand);
+
+cpuAllocated = min(totalCPU, totalTraffic * 0.5);
+memoryAllocated = min(totalMemory, totalTraffic * 0.3);
+bandwidthAllocated = min(totalBandwidth, totalTraffic);
+
+%% Network Management Decision
+if totalTraffic <= totalBandwidth
+    networkStatus = "NORMAL";
+else
+    networkStatus = "CONGESTED";
+end
+
+%% Display Results
+fprintf('========================================\n');
+fprintf(' CLOUD-ASSISTED NETWORK MANAGEMENT\n');
+fprintf('========================================\n');
+
+fprintf('Number of Users       : %d\n', numUsers);
+fprintf('Number of Base Stations: %d\n', numBS);
+fprintf('Total Traffic Demand  : %.2f units\n', totalTraffic);
+
+fprintf('\nTraffic at Base Stations:\n');
+
+for i = 1:numBS
+    fprintf('BS%d : %.2f units\n', i, bsTraffic(i));
+end
+
+fprintf('\nCloud Resource Allocation:\n');
+fprintf('CPU      : %.2f / %.2f units\n', cpuAllocated, totalCPU);
+fprintf('Memory   : %.2f / %.2f units\n', memoryAllocated, totalMemory);
+fprintf('Bandwidth: %.2f / %.2f units\n', bandwidthAllocated, totalBandwidth);
+
+fprintf('\nNetwork Status: %s\n', networkStatus);
+
+%% Plot 1 - Traffic per Base Station
+figure;
+bar(bsTraffic);
+xlabel('Base Station');
+ylabel('Traffic Demand');
+title('Traffic Distribution Across Base Stations');
+grid on;
+
+%% Plot 2 - Cloud Resource Utilization
+figure;
+
+resources = [cpuAllocated memoryAllocated bandwidthAllocated];
+limits = [totalCPU totalMemory totalBandwidth];
+
+utilization = (resources ./ limits) * 100;
+
+bar(utilization);
+xlabel('Cloud Resource');
+ylabel('Utilization (%)');
+title('Cloud Resource Utilization');
+xticklabels({'CPU','Memory','Bandwidth'});
+ylim([0 120]);
+grid on;
+
+%% Plot 3 - User Traffic Demand
+figure;
+plot(1:numUsers, trafficDemand, '-o', 'LineWidth', 1.5);
+xlabel('User Number');
+ylabel('Traffic Demand');
+title('User Traffic Demand');
+grid on;
